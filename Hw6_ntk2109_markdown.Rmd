@@ -6,5 +6,14 @@ output: github_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+```{r Problem One Data, message=FALSE}
+Washington_data = read_csv("./data/WashingtonPost/homicide-data.csv")%>%
+                  mutate(city_state = paste(city,state, sep = ","))%>%
+                  filter(city_state != "Tulsa,AL")%>%
+                  filter(!(city_state %in% c("Dallas,TX", "Phoenix,AZ", "Kansas City,MO")))%>%
+                  mutate(victim_age = as.numeric(victim_age))
+
+
 ```
