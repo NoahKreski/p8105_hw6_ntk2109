@@ -38,4 +38,49 @@ m1 = fit_logistic %>%
   filter(term == "victim_raceNon-White")
 
 ```
+```{r Problem Two GLM, message=FALSE}
+birthweight_data = read_csv("./data/birthweight.csv")%>%
+                   mutate(babysex = as.factor(babysex), frace = as.factor(frace), malform = as.factor(malform), mrace = as.factor(mrace))
+                  
+birthweight_data %>% 
+  lm(bwt ~ babysex + bhead + blength + delwt + fincome + frace + gaweeks + malform + menarche + mheight + mrace + momage +parity + pnumlbw + pnumsga +ppbmi + ppwt + smoken + wtgain, data = .) %>% 
+  broom::tidy() %>% 
+  knitr::kable(digits = 3)
 
+birthweight_data %>% 
+  lm(bwt ~ babysex + bhead + blength + delwt + fincome + gaweeks + malform + menarche + mheight + mrace + momage +parity + pnumlbw + pnumsga +ppbmi + ppwt + smoken + wtgain, data = .) %>% 
+  broom::tidy() %>% 
+  knitr::kable(digits = 3)
+
+birthweight_data %>% 
+  lm(bwt ~ babysex + bhead + blength + delwt + fincome + gaweeks + menarche + mheight + mrace + momage +parity + pnumlbw + pnumsga +ppbmi + ppwt + smoken + wtgain, data = .) %>% 
+  broom::tidy() %>% 
+  knitr::kable(digits = 3)
+
+birthweight_data %>% 
+  lm(bwt ~ babysex + bhead + blength + delwt + fincome + gaweeks + menarche + mheight + mrace + momage +parity + pnumlbw + pnumsga + ppwt + smoken + wtgain, data = .) %>% 
+  broom::tidy() %>% 
+  knitr::kable(digits = 3)
+
+birthweight_data %>% 
+  lm(bwt ~ babysex + bhead + blength + delwt + fincome + gaweeks + menarche + mheight + mrace +parity + pnumlbw + pnumsga + ppwt + smoken + wtgain, data = .) %>% 
+  broom::tidy() %>% 
+  knitr::kable(digits = 3)
+
+birthweight_data %>% 
+  lm(bwt ~ babysex + bhead + blength + delwt + fincome + gaweeks + mheight + mrace +parity + pnumlbw + pnumsga + ppwt + smoken + wtgain, data = .) %>% 
+  broom::tidy() %>% 
+  knitr::kable(digits = 3)
+
+birthweight_data %>% 
+  lm(bwt ~ babysex + bhead + blength + delwt + gaweeks + mheight + mrace +parity + pnumlbw + pnumsga + ppwt + smoken + wtgain, data = .) %>% 
+  broom::tidy() %>% 
+  knitr::kable(digits = 3)
+
+fit = lm(bwt ~ babysex + bhead + blength + delwt + gaweeks + mheight + mrace +parity + pnumlbw + pnumsga + ppwt + smoken + wtgain, data = birthweight_data)
+
+birthweight_data%>%
+  modelr::add_predictions(fit)%>%
+  modelr::add_residuals(fit)%>%
+  ggplot(aes(x=pred, y = resid)) + geom_point()
+```
