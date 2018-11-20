@@ -1,0 +1,10 @@
+---
+title: "HW6_ntk2109_Markdown"
+author: "Noah Kreski"
+date: "November 20, 2018"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
