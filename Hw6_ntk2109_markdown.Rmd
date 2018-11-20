@@ -36,5 +36,6 @@ m1 = fit_logistic %>%
   mutate(OR = exp(estimate)) %>%
   select(term, log_OR = estimate, OR)%>%
   filter(term == "victim_raceNon-White")
+
 ```
 
