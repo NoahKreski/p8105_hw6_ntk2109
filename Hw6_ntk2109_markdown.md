@@ -1,16 +1,9 @@
----
-title: "HW6_ntk2109_Markdown"
-author: "Noah Kreski"
-date: "November 20, 2018"
-output: github_document
----
+HW6\_ntk2109\_Markdown
+================
+Noah Kreski
+November 20, 2018
 
-```{r setup, include=FALSE}
-library(tidyverse)
-library(forcats)
-```
-```{r Problem One Data, message=FALSE}
- 
+``` r
 Washington_data = read_csv("./data/WashingtonPost/homicide-data.csv")%>%
                   mutate(city_state = paste(city,state, sep = ","))%>%
                   filter(city_state != "Tulsa,AL")%>%
@@ -18,14 +11,18 @@ Washington_data = read_csv("./data/WashingtonPost/homicide-data.csv")%>%
                   mutate(victim_age = as.numeric(victim_age))%>%
                   filter((victim_race != "Unknown"))%>%
                   mutate(victim_race = as.numeric(victim_race == "White"))
-                  
+```
+
+    ## Warning in evalq(as.numeric(victim_age), <environment>): NAs introduced by
+    ## coercion
+
+``` r
 Washington_data$victim_race <- factor(Washington_data$victim_race, levels = c(1,0), labels = c("White","Non-White"))
 Washington_data$Solved <- as.numeric(Washington_data$disposition == "Closed by arrest")
 Washington_data$victim_race = fct_relevel(Washington_data$victim_race, "White")
-
 ```
-```{r Problem One GLM, message=FALSE}
 
+``` r
 fit_logistic = 
   Washington_data%>% 
   filter(city_state == "Baltimore,MD")%>%
@@ -37,4 +34,3 @@ m1 = fit_logistic %>%
   select(term, log_OR = estimate, OR)%>%
   filter(term == "victim_raceNon-White")
 ```
-
