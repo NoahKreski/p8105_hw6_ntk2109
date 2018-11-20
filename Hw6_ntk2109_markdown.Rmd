@@ -7,13 +7,20 @@ output: github_document
 
 ```{r setup, include=FALSE}
 library(tidyverse)
+library(forcats)
 ```
 ```{r Problem One Data, message=FALSE}
+ 
 Washington_data = read_csv("./data/WashingtonPost/homicide-data.csv")%>%
                   mutate(city_state = paste(city,state, sep = ","))%>%
                   filter(city_state != "Tulsa,AL")%>%
                   filter(!(city_state %in% c("Dallas,TX", "Phoenix,AZ", "Kansas City,MO")))%>%
-                  mutate(victim_age = as.numeric(victim_age))
-
+                  mutate(victim_age = as.numeric(victim_age))%>%
+                  filter((victim_race != "Unknown"))%>%
+                  mutate(victim_race = as.numeric(victim_race == "White"))
+                  
+Washington_data$victim_race <- factor(Washington_data$victim_race, levels = c(1,0), labels = c("White","Non-White"))
+Washington_data$Solved <- as.numeric(Washington_data$disposition == "Closed by arrest")
+Washington_data$victim_race = fct_relevel(Washington_data$victim_race, "White")
 
 ```
