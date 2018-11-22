@@ -4,7 +4,7 @@ author: "Noah Kreski"
 date: "November 20, 2018"
 output: github_document
 ---
-
+###Problem One: Baltimore Regression
 ```{r setup, include=FALSE}
 library(tidyverse)
 library(forcats)
@@ -40,6 +40,9 @@ m1 = fit_logistic %>%
   filter(term == "victim_raceNon-White")
 
 ```
+
+
+###Problem Two: Child Birthweight Models
 ```{r Problem Two GLM, message=FALSE, eval=FALSE}
 #I am getting the data with appropriate formats
 birthweight_data = read_csv("./data/birthweight.csv")%>%
@@ -96,7 +99,7 @@ fit = lm(bwt ~ babysex + bhead + blength + delwt + gaweeks + mheight + mrace +pa
 birthweight_data%>%
   modelr::add_predictions(fit)%>%
   modelr::add_residuals(fit)%>%
-  ggplot(aes(x=pred, y = resid)) + geom_point()
+  ggplot(aes(x=pred, y = resid)) + geom_point() + labs(title = "Residuals vs Predicted values: Backwards Selection model")
 ```
 
 
@@ -108,7 +111,7 @@ fit_length_age = lm(bwt ~ blength + gaweeks, data = birthweight_data)
 birthweight_data%>%
   modelr::add_predictions(fit_length_age)%>%
   modelr::add_residuals(fit_length_age)%>%
-  ggplot(aes(x=pred, y = resid)) + geom_point()
+  ggplot(aes(x=pred, y = resid)) + geom_point() + labs(title = "Residuals vs Predicted values: Length and Age")
 
 #I'm fitting the second alternative model and mapping its predictions and residuals.
 fit_circumference_length_sex = lm (bwt ~ bhead + blength + babysex + bhead*blength + bhead*babysex + blength*babysex + bhead*blength*babysex, data = birthweight_data)
@@ -116,7 +119,7 @@ fit_circumference_length_sex = lm (bwt ~ bhead + blength + babysex + bhead*bleng
 birthweight_data%>%
   modelr::add_predictions(fit_circumference_length_sex)%>%
   modelr::add_residuals(fit_circumference_length_sex)%>%
-  ggplot(aes(x=pred, y = resid)) + geom_point()
+  ggplot(aes(x=pred, y = resid)) + geom_point() + labs(title = "Residuals vs Predicted values: Circumference, Length and Sex")
 ```
 
 These plots map the residuals and predicted values for the two alternative models in the same way that I did earlier for my own model. The model with just length and age has much larger residuals, often close to 1,000, whereas the model with sex, head circumference and length appears similar to my own model.
@@ -148,7 +151,7 @@ cv_df %>%
   gather(key = model, value = rmse) %>% 
   mutate(model = str_replace(model, "rmse_", ""),
          model = fct_inorder(model)) %>% 
-  ggplot(aes(x = model, y = rmse)) + geom_violin()
+  ggplot(aes(x = model, y = rmse)) + geom_violin() + labs(title = "RMSE by model")
 ```
 
 The above cross validation and RMSE visual shows a lower RMSE for my own model than for either of the two alternative models provides, evidenced by a distribution of RMSE values that is lower than either of the other models.
