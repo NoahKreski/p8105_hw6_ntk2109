@@ -26,6 +26,9 @@ Washington_data$Solved <- as.numeric(Washington_data$disposition == "Closed by a
 Washington_data$victim_race = fct_relevel(Washington_data$victim_race, "White")
 
 ```
+
+The above tidying prepares the data for regression analysis solved vs unresolved as the outcome and victim age, sex and race as predictors.
+
 ```{r Problem One GLM, message=FALSE}
 #I am modeling the solved outcome for Baltimore logistically.
 fit_logistic = 
