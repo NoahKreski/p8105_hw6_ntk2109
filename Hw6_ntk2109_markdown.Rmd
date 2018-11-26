@@ -29,21 +29,46 @@ Washington_data$victim_race = fct_relevel(Washington_data$victim_race, "White")
 
 The above tidying prepares the data for regression analysis solved vs unresolved as the outcome and victim age, sex and race as predictors.
 
-```{r Problem One GLM, message=FALSE}
+```{r Problem One GLM Baltimore, message=FALSE}
 #I am modeling the solved outcome for Baltimore logistically.
 fit_logistic = 
   Washington_data%>% 
   filter(city_state == "Baltimore,MD")%>%
   glm(Solved ~ victim_age + victim_race + victim_sex, data = ., family = binomial()) 
-#I am tidying the data to get what I need.
-m1 = fit_logistic %>% 
+#I am getting the standard error for the regression coefficient of race
+Race_se = (coef(summary(fit_logistic))[3, 2])
+          
+#I am tidying the data to get what I need, and creating a 95% confidence interval with the standard error attained earlier.
+  fit_logistic %>%
   broom::tidy() %>% 
   mutate(OR = exp(estimate)) %>%
-  select(term, log_OR = estimate, OR)%>%
+  mutate(conf_lower = exp(estimate - 1.96 * Race_se))%>%
+  mutate(conf_higher = exp(estimate + 1.96 * Race_se))%>%
+  select(term, log_OR = estimate, OR, conf_lower, conf_higher)%>%
   filter(term == "victim_raceNon-White")
 
 ```
+The odds ratio for solving homicides comparing non-white victims to white victims, controlling for age and sex, in Baltimore, Md is .440608, with a 95% confidence interval of (.3129079, .6204234).
 
+```{r Problem One GLM All cities, message=FALSE}
+#I am modeling the solved outcome for Baltimore logistically.
+fit_logistic = 
+  Washington_data%>% 
+  filter(city_state == "Baltimore,MD")%>%
+  glm(Solved ~ victim_age + victim_race + victim_sex, data = ., family = binomial()) 
+#I am getting the standard error for the regression coefficient of race
+Race_se = (coef(summary(fit_logistic))[3, 2])
+          
+#I am tidying the data to get what I need, and creating a 95% confidence interval with the standard error attained earlier.
+  fit_logistic %>%
+  broom::tidy() %>% 
+  mutate(OR = exp(estimate)) %>%
+  mutate(conf_lower = exp(estimate - 1.96 * Race_se))%>%
+  mutate(conf_higher = exp(estimate + 1.96 * Race_se))%>%
+  select(term, log_OR = estimate, OR, conf_lower, conf_higher)%>%
+  filter(term == "victim_raceNon-White")
+
+```
 
 ###Problem Two: Child Birthweight Models
 ```{r Problem Two GLM, message=FALSE, eval=FALSE}

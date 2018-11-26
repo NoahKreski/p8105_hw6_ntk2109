@@ -20,19 +20,57 @@ Washington_data$Solved <- as.numeric(Washington_data$disposition == "Closed by a
 Washington_data$victim_race = fct_relevel(Washington_data$victim_race, "White")
 ```
 
+The above tidying prepares the data for regression analysis solved vs unresolved as the outcome and victim age, sex and race as predictors.
+
 ``` r
 #I am modeling the solved outcome for Baltimore logistically.
 fit_logistic = 
   Washington_data%>% 
   filter(city_state == "Baltimore,MD")%>%
   glm(Solved ~ victim_age + victim_race + victim_sex, data = ., family = binomial()) 
-#I am tidying the data to get what I need.
-m1 = fit_logistic %>% 
+#I am getting the standard error for the regression coefficient of race
+Race_se = (coef(summary(fit_logistic))[3, 2])
+          
+#I am tidying the data to get what I need, and creating a 95% confidence interval with the standard error attained earlier.
+  fit_logistic %>%
   broom::tidy() %>% 
   mutate(OR = exp(estimate)) %>%
-  select(term, log_OR = estimate, OR)%>%
+  mutate(conf_lower = exp(estimate - 1.96 * Race_se))%>%
+  mutate(conf_higher = exp(estimate + 1.96 * Race_se))%>%
+  select(term, log_OR = estimate, OR, conf_lower, conf_higher)%>%
   filter(term == "victim_raceNon-White")
 ```
+
+    ## # A tibble: 1 x 5
+    ##   term                 log_OR    OR conf_lower conf_higher
+    ##   <chr>                 <dbl> <dbl>      <dbl>       <dbl>
+    ## 1 victim_raceNon-White -0.820 0.441      0.313       0.620
+
+The odds ratio for solving homicides comparing non-white victims to white victims, controlling for age and sex, in Baltimore, Md is .440608, with a 95% confidence interval of (.3129079, .6204234).
+
+``` r
+#I am modeling the solved outcome for Baltimore logistically.
+fit_logistic = 
+  Washington_data%>% 
+  filter(city_state == "Baltimore,MD")%>%
+  glm(Solved ~ victim_age + victim_race + victim_sex, data = ., family = binomial()) 
+#I am getting the standard error for the regression coefficient of race
+Race_se = (coef(summary(fit_logistic))[3, 2])
+          
+#I am tidying the data to get what I need, and creating a 95% confidence interval with the standard error attained earlier.
+  fit_logistic %>%
+  broom::tidy() %>% 
+  mutate(OR = exp(estimate)) %>%
+  mutate(conf_lower = exp(estimate - 1.96 * Race_se))%>%
+  mutate(conf_higher = exp(estimate + 1.96 * Race_se))%>%
+  select(term, log_OR = estimate, OR, conf_lower, conf_higher)%>%
+  filter(term == "victim_raceNon-White")
+```
+
+    ## # A tibble: 1 x 5
+    ##   term                 log_OR    OR conf_lower conf_higher
+    ##   <chr>                 <dbl> <dbl>      <dbl>       <dbl>
+    ## 1 victim_raceNon-White -0.820 0.441      0.313       0.620
 
 ### Problem Two: Child Birthweight Models
 
@@ -133,16 +171,16 @@ cv_df %>% pull(train) %>% .[[1]] %>% as_tibble
     ## # A tibble: 3,473 x 20
     ##    babysex bhead blength   bwt delwt fincome frace gaweeks malform menarche
     ##    <fct>   <int>   <int> <int> <int>   <int> <fct>   <dbl> <fct>      <int>
-    ##  1 2          36      50  3345   148      85 1        39.9 0             12
-    ##  2 2          34      52  3374   156       5 1        41.6 0             13
-    ##  3 1          33      52  3374   129      55 1        40.7 0             12
-    ##  4 2          33      49  2778   140       5 1        37.4 0             12
-    ##  5 1          36      52  3515   146      85 1        40.3 0             11
-    ##  6 1          33      50  3459   169      75 2        40.7 0             12
-    ##  7 2          35      51  3317   130      55 1        43.4 0             13
-    ##  8 1          35      51  3459   146      55 1        39.4 0             12
-    ##  9 1          36      53  3629   147      75 1        41.3 0             11
-    ## 10 1          35      51  3544   129      65 1        39.6 0             12
+    ##  1 2          34      51  3629   177      35 1        39.9 0             13
+    ##  2 1          34      48  3062   156      65 2        25.9 0             14
+    ##  3 2          36      50  3345   148      85 1        39.9 0             12
+    ##  4 2          34      52  3374   156       5 1        41.6 0             13
+    ##  5 2          33      46  2523   126      96 2        40.3 0             14
+    ##  6 2          33      49  2778   140       5 1        37.4 0             12
+    ##  7 1          36      52  3515   146      85 1        40.3 0             11
+    ##  8 1          33      50  3459   169      75 2        40.7 0             12
+    ##  9 2          35      51  3317   130      55 1        43.4 0             13
+    ## 10 1          35      51  3459   146      55 1        39.4 0             12
     ## # ... with 3,463 more rows, and 10 more variables: mheight <int>,
     ## #   momage <int>, mrace <fct>, parity <int>, pnumlbw <int>, pnumsga <int>,
     ## #   ppbmi <dbl>, ppwt <int>, smoken <dbl>, wtgain <int>
@@ -154,16 +192,16 @@ cv_df %>% pull(test) %>% .[[1]] %>% as_tibble
     ## # A tibble: 869 x 20
     ##    babysex bhead blength   bwt delwt fincome frace gaweeks malform menarche
     ##    <fct>   <int>   <int> <int> <int>   <int> <fct>   <dbl> <fct>      <int>
-    ##  1 2          34      51  3629   177      35 1        39.9 0             13
-    ##  2 1          34      48  3062   156      65 2        25.9 0             14
-    ##  3 1          34      52  3062   157      55 1        40   0             14
-    ##  4 2          33      46  2523   126      96 2        40.3 0             14
-    ##  5 2          35      48  3175   158      75 1        39.7 0             13
-    ##  6 2          35      50  3175   140      85 2        40.6 0             14
-    ##  7 1          34      63  3175   143      25 1        41.9 0             13
-    ##  8 2          34      49  3118   161      45 2        38.9 0             10
-    ##  9 2          34      52  3629   112      25 1        38   0             10
-    ## 10 1          35      55  3856   171      85 1        41.1 0             13
+    ##  1 1          34      52  3062   157      55 1        40   0             14
+    ##  2 1          33      52  3374   129      55 1        40.7 0             12
+    ##  3 1          35      51  3544   129      65 1        39.6 0             12
+    ##  4 2          33      49  2551   120      75 2        38.1 0             11
+    ##  5 1          35      56  3232   147      55 1        42.1 0             13
+    ##  6 1          35      51  3345   145      75 1        41.3 0             12
+    ##  7 2          35      51  3827   130      45 1        41.3 0             12
+    ##  8 1          38      53  3799   167      75 1        39.9 0             12
+    ##  9 2          33      54  3062   134      65 1        40.4 0             12
+    ## 10 1          35      53  3175   130      45 1        40.4 0             13
     ## # ... with 859 more rows, and 10 more variables: mheight <int>,
     ## #   momage <int>, mrace <fct>, parity <int>, pnumlbw <int>, pnumsga <int>,
     ## #   ppbmi <dbl>, ppwt <int>, smoken <dbl>, wtgain <int>
