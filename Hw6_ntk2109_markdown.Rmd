@@ -4,7 +4,7 @@ author: "Noah Kreski"
 date: "November 20, 2018"
 output: github_document
 ---
-###Problem One: Baltimore Regression
+###Problem One: Homicide Regression
 ```{r setup, include=FALSE}
 library(tidyverse)
 library(forcats)
@@ -51,10 +51,14 @@ Race_se = (coef(summary(fit_logistic))[3, 2])
 The odds ratio for solving homicides comparing non-white victims to white victims, controlling for age and sex, in Baltimore, Md is .440608, with a 95% confidence interval of (.3129079, .6204234).
 
 ```{r Problem One GLM All cities, message=FALSE}
-#I am modeling the solved outcome for Baltimore logistically.
+
+
+odds_function = function(x) {
+  
+  #I am modeling the solved outcome for every city logistically.
 fit_logistic = 
   Washington_data%>% 
-  filter(city_state == "Baltimore,MD")%>%
+  filter(city_state == x)%>%
   glm(Solved ~ victim_age + victim_race + victim_sex, data = ., family = binomial()) 
 #I am getting the standard error for the regression coefficient of race
 Race_se = (coef(summary(fit_logistic))[3, 2])
@@ -67,11 +71,33 @@ Race_se = (coef(summary(fit_logistic))[3, 2])
   mutate(conf_higher = exp(estimate + 1.96 * Race_se))%>%
   select(term, log_OR = estimate, OR, conf_lower, conf_higher)%>%
   filter(term == "victim_raceNon-White")
+}
+#This code will iterate the function over all cities, produce a column with tibbles, and unnest to generate proportions and CIs for every city.
+city_list = c(unique(Washington_data$city_state))
+city_df = tibble(city_list,
+map(city_list, odds_function)) %>%
+unnest()
 
+city_df
 ```
 
+The above data frame provides the odds ratios for solving homicides comparing non-white to white victims, both as a log estimate and the odds ratio, with confidence intervals.
+
+```{r graph OR cities}
+city_df%>%
+mutate(city_list = forcats::fct_reorder(city_list, OR))%>%
+#I am creating a visual with proportions by location, with error bars, and formatting appropriately.
+ggplot( aes(x = city_list, y = OR, group = city_list)) + geom_point() +theme(axis.text.x = element_text(angle = 70, hjust = 1)) + geom_errorbar( mapping=aes(x=city_list, ymin=conf_lower, ymax=conf_higher))+labs(title = "ORs for Solved Homicides, NonWhite vs White Victim, Adjusted by Sex/Age", x = "Location", y = "Odds Ratio")
+  
+```
+
+This plot shows the adjusted odds ratios comparing Nonwhite to White homicide victims in terms of their homicides being solved. Overwhelmingly, Non-White victims were less likely to have their homicides solved than White victims, and approximately half of these odds ratios had a confidence interval that did not contain the null value, an odds ratio of 1.00. This provides consistent evidence of disparities in this outcome.
+
 ###Problem Two: Child Birthweight Models
-```{r Problem Two GLM, message=FALSE, eval=FALSE}
+
+To begin, I will conduct a backwards regression on the full set of variables. While this may be less thorough than other methods in isolation, it is only to supply a reasonable subset of variables that are critical to the outcome in question, which will then be honed with theory and conceptual edits.
+
+```{r Problem Two GLM Backwards Selection, message=FALSE, eval=FALSE}
 #I am getting the data with appropriate formats
 birthweight_data = read_csv("./data/birthweight.csv")%>%
                    mutate(babysex = as.factor(babysex), frace = as.factor(frace), malform = as.factor(malform), mrace = as.factor(mrace))
@@ -114,15 +140,20 @@ birthweight_data %>%
 
 ```
 
-Following data loading and tidying, creating factors where necessary, I used a backwards selection model to attain a final regression model for these data. Every step I took away to predictor with the highest p-value until all variables had a p<.05, or multiple factor levels below that threshold. This final model has 13 predictors including baby sex, head circumference at birth in cm, length at birth in cm, mother's weight at delivery in pounds, gestational age in weeks, mother's height, mother's race, number of live births prior to this pregnancy, previous number of low birth weight babies, number of prior small for gestational age babies, mother's pre-pregnancy weight, average number of cigarettes smoked per day during pregnancy and weight gain during pregnancy.
+Following data loading and tidying, creating factors where necessary, I used a backwards selection model to attain a final regression model for these data. Every step I took away to predictor with the highest p-value until all variables had a p<.05, or multiple factor levels below that threshold. This final model has 13 predictors including baby sex, head circumference at birth in cm, length at birth in cm, mother's weight at delivery in pounds, gestational age in weeks, mother's height, mother's race, number of live births prior to this pregnancy, previous number of low birth weight babies, number of prior small for gestational age babies, mother's pre-pregnancy weight, average number of cigarettes smoked per day during pregnancy and weight gain during pregnancy. 
 
+However, it is worth asking conceptually what may be missing from this model. Prior research has shown that there may be an interaction between a baby's sex and growth timeline [see citation below], and so an interaction term between sex amd gestational age is a potentially worthwhile addition to this model.
+
+Citation : Broere-Brown, Z. A., Baan, E., Schalekamp-Timmermans, S., Verburg, B. O., Jaddoe, V. W., & Steegers, E. A. (2016). Sex-specific differences in fetal and infant growth patterns: a prospective population-based cohort study. Biology of sex differences, 7, 65. doi:10.1186/s13293-016-0119-1
+
+Additionally, a smaller gestational age may be more of a concern for low birth weight in mothers with a higher number of prior "small for gestational age" births, and so an interaction term between gaweeks and pnumsga is warranted.
 
 ```{r model fit, message=FALSE, warning=FALSE}
 #I'm creating the needed data set again in a chunk where eval does not equal False
 birthweight_data = read_csv("./data/birthweight.csv")%>%
                    mutate(babysex = as.factor(babysex), frace = as.factor(frace), malform = as.factor(malform), mrace = as.factor(mrace))
 #I'm assigning my final model to fit
-fit = lm(bwt ~ babysex + bhead + blength + delwt + gaweeks + mheight + mrace +parity + pnumlbw + pnumsga + ppwt + smoken + wtgain, data = birthweight_data)
+fit = lm(bwt ~ babysex + blength + bhead + delwt + gaweeks + mheight + mrace +parity + pnumlbw + pnumsga + ppwt + smoken + wtgain + babysex*gaweeks + gaweeks*pnumsga, data = birthweight_data)
 #I am plotting the predictions and residuals
 birthweight_data%>%
   modelr::add_predictions(fit)%>%
@@ -167,7 +198,7 @@ cv_df =
 #I am using my various models in cross-validation examining each model with the train set, and then examining RMSE with the test set
 cv_df = 
   cv_df %>% 
-  mutate( fit = map(train, ~lm(bwt ~ babysex + bhead + blength + delwt + gaweeks + mheight + mrace +parity + pnumlbw + pnumsga + ppwt + smoken + wtgain, data = .x)),
+  mutate( fit = map(train, ~lm(bwt ~ babysex + blength + bhead +  delwt + gaweeks + mheight + mrace +parity + pnumlbw + pnumsga + ppwt + smoken + wtgain + babysex*gaweeks + gaweeks*pnumsga, data = .x)),
          fit_length_age = map(train, ~lm(bwt ~ blength + gaweeks, data = .x)),
          fit_circumference_length_sex = map(train, ~lm(bwt ~ bhead + blength + babysex + bhead*blength + bhead*babysex + blength*babysex + bhead*blength*babysex, data = .x))) %>% 
   mutate(rmse_fit    = map2_dbl(fit, test, ~rmse(model = .x, data = .y)),
@@ -182,4 +213,4 @@ cv_df %>%
   ggplot(aes(x = model, y = rmse)) + geom_violin() + labs(title = "RMSE by model")
 ```
 
-The above cross validation and RMSE visual shows a lower RMSE for my own model than for either of the two alternative models provides, evidenced by a distribution of RMSE values that is lower than either of the other models.
+The above cross validation and RMSE visual shows a slightly lower RMSE for my own model than for either of the two alternative models provides, which indicates a superior predictive fit. Generally, this suggests that the model I developed is superior to the other two, at least for minimization of error.
